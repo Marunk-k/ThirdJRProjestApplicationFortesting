@@ -9,23 +9,40 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 public class TestDao {
 
     private final ObjectMapper objectMapper;
-    private final File testFile;
+    private final File testsDirectory;
 
     @SneakyThrows
     public List<Test> findAll() {
-        if (testFile.length() == 0) {
-            return new ArrayList<>();
+        ensureDirectoryExists();
+        List<Test> tests = new ArrayList<>();
+
+        try (Stream<Path> paths = Files.list(testsDirectory.toPath())) {
+            paths.filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().startsWith("test_"))
+                    .filter(path -> path.toString().toLowerCase().endsWith(".json"))
+                    .forEach(path -> {
+                        try {
+                            Test test = objectMapper.readValue(path.toFile(), Test.class);
+                            tests.add(test);
+                        } catch (Exception e) {
+
+                        }
+                    });
         }
-        return objectMapper.readValue(testFile, new TypeReference<List<Test>>() {});
+        return tests;
     }
 
     public List<Test> findByTopic(String topic) {
@@ -42,26 +59,40 @@ public class TestDao {
     }
 
     @SneakyThrows
+    private void ensureDirectoryExists() {
+        if (!testsDirectory.exists()) {
+            Files.createDirectories(testsDirectory.toPath());
+        }
+    }
+
+    @SneakyThrows
     public void save(Test test) {
-        List<Test> tests = findAll();
-        tests.add(test);
-        objectMapper.writeValue(testFile, tests);
+        ensureDirectoryExists();
+        File testFile = getTestFile(test.getId());
+        objectMapper.writeValue(testFile, test);
+    }
+
+    private File getTestFile(UUID testId) {
+        return new File(testsDirectory, "test_" + testId + ".json");
     }
 
     @SneakyThrows
     public void deleteTest(UUID testId) {
-        List<Test> tests = findAll();
-        Test testForDeleting = findById(testId);
-        tests.remove(testForDeleting);
-        objectMapper.writeValue(testFile, tests);
+        ensureDirectoryExists();
+        File testFile = getTestFile(testId);
+
+        if (testFile.exists()) {
+            Files.delete(testFile.toPath());
+        }
     }
 
     @SneakyThrows
     public void update(Test newTest, UUID testId) {
-        List<Test> tests = findAll();
-        Test oldTest = findById(testId);
-        int index = tests.indexOf(oldTest);
-        tests.set(index, newTest);
-        objectMapper.writeValue(testFile, tests);
+        ensureDirectoryExists();
+
+        if (findById(testId) != null) {
+            newTest.setId(testId);
+            save(newTest);
+        }
     }
 }

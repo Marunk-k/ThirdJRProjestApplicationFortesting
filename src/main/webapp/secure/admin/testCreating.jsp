@@ -29,29 +29,29 @@
             div.className = "question";
 
             div.innerHTML = `
-                <h4>Вопрос</h4>
-                <textarea name="" placeholder="Текст вопроса" required></textarea>
-                <label>Тип вопроса:
-                    <select name="" class="question-type" onchange="updateCheckboxBehavior(this)">
-                        <option value="SINGLE">Один правильный</option>
-                        <option value="MULTIPLE">Несколько правильных</option>
-                    </select>
-                </label>
-                <div class="answers">
-                    <div>
-                        <input type="text" name="" placeholder="Ответ 1" required>
-                        <input type="checkbox" name="" value="0" onchange="handleSingleChoice(this)">
-                    </div>
-                    <div>
-                        <input type="text" name="" placeholder="Ответ 2" required>
-                        <input type="checkbox" name="" value="1" onchange="handleSingleChoice(this)">
-                    </div>
-                </div>
-                <div class="actions">
-                    <button type="button" onclick="addAnswer(this)" class="btn-add">Добавить ответ</button>
-                    <button type="button" onclick="removeQuestion(this)" class="btn-remove">Удалить вопрос</button>
-                </div>
-            `;
+        <h4>Вопрос</h4>
+        <textarea name="" placeholder="Текст вопроса" required></textarea>
+        <label>Тип вопроса:
+            <select name="" class="question-type" onchange="updateAnswerType(this)">
+                <option value="SINGLE">Один правильный</option>
+                <option value="MULTIPLE">Несколько правильных</option>
+            </select>
+        </label>
+        <div class="answers">
+            <div>
+                <input type="text" name="" placeholder="Ответ 1" required>
+                <input type="checkbox" name="" value="0">
+            </div>
+            <div>
+                <input type="text" name="" placeholder="Ответ 2" required>
+                <input type="checkbox" name="" value="1">
+            </div>
+        </div>
+        <div class="actions">
+            <button type="button" onclick="addAnswer(this)" class="btn-add">Добавить ответ</button>
+            <button type="button" onclick="removeQuestion(this)" class="btn-remove">Удалить вопрос</button>
+        </div>
+    `;
             container.appendChild(div);
             renumberQuestions();
         }
@@ -61,9 +61,9 @@
             const index = answersDiv.children.length;
             const wrapper = document.createElement("div");
             wrapper.innerHTML = `
-                <input type="text" name="" placeholder="Ответ ${index + 1}" required>
-                <input type="checkbox" name="" value="${index}" onchange="handleSingleChoice(this)">
-            `;
+        <input type="text" name="" placeholder="Ответ ${index + 1}" required>
+        <input type="checkbox" name="" value="${index}">
+    `;
             answersDiv.appendChild(wrapper);
             renumberQuestions();
         }
@@ -86,32 +86,31 @@
                 const answers = q.querySelectorAll('.answers div');
                 answers.forEach((ansDiv, aIdx) => {
                     ansDiv.querySelector('input[type="text"]').name = `questions[${qIdx}].answers[${aIdx}]`;
-                    ansDiv.querySelector('input[type="checkbox"]').name = `questions[${qIdx}].correct`;
-                    ansDiv.querySelector('input[type="checkbox"]').value = aIdx;
+
+                    // ОСНОВНОЕ ИСПРАВЛЕНИЕ: одинаковое имя для всех чекбоксов вопроса
+                    const checkbox = ansDiv.querySelector('input[type="checkbox"]');
+                    checkbox.name = `questions[${qIdx}].correct`;
+                    checkbox.value = aIdx;
                 });
             });
         }
 
-        function updateCheckboxBehavior(select) {
-            const type = select.value;
-            const checkboxes = select.closest('.question').querySelectorAll('input[type="checkbox"]');
-            if(type === 'SINGLE') {
-                let found = false;
-                checkboxes.forEach(cb => {
-                    if(found) cb.checked = false;
-                    if(cb.checked) found = true;
-                });
-            }
+        // Обновляем тип ответов при изменении селектора
+        function updateAnswerType(select) {
+            const questionDiv = select.closest('.question');
+            const answersDiv = questionDiv.querySelector('.answers');
+            const isMultiple = select.value === 'MULTIPLE';
+
+            // Обновляем все чекбоксы
+            answersDiv.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.name = `questions[${getQuestionIndex(questionDiv)}].correct`;
+            });
         }
 
-        function handleSingleChoice(checkbox) {
-            const q = checkbox.closest('.question');
-            const type = q.querySelector('select.question-type').value;
-            if(type === 'SINGLE' && checkbox.checked){
-                q.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-                    if(cb !== checkbox) cb.checked = false;
-                });
-            }
+        // Получаем индекс вопроса
+        function getQuestionIndex(questionDiv) {
+            const questions = Array.from(document.querySelectorAll('.question'));
+            return questions.indexOf(questionDiv);
         }
     </script>
 </head>

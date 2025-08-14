@@ -115,14 +115,13 @@ public class TestService {
 
         while (true) {
             String desc = req.getParameter("questions[" + i + "].description");
-            if (desc == null || desc.trim().isEmpty()) break; // больше вопросов нет
+            if (desc == null || desc.trim().isEmpty()) break;
 
             String typeStr = req.getParameter("questions[" + i + "].type");
-            if (typeStr == null) typeStr = "SINGLE"; // дефолт
-
+            if (typeStr == null) typeStr = "SINGLE";
             QuestionType type = QuestionType.valueOf(typeStr);
 
-            // читаем ответы
+            // Чтение ответов
             List<String> answers = new ArrayList<>();
             int j = 0;
             while (true) {
@@ -132,40 +131,38 @@ public class TestService {
                 j++;
             }
 
-            // читаем правильные ответы
+            // Чтение правильных ответов - ОСНОВНОЕ ИСПРАВЛЕНИЕ
             List<Integer> rightIndexes = new ArrayList<>();
-            if (type == QuestionType.MULTIPLE) {
-                String[] corrects = req.getParameterValues("questions[" + i + "].correct[]");
-                if (corrects != null) {
-                    for (String c : corrects) {
-                        try {
-                            rightIndexes.add(Integer.parseInt(c));
-                        } catch (NumberFormatException ignored) {}
-                    }
-                }
-            } else {
-                String correct = req.getParameter("questions[" + i + "].correct");
-                if (correct != null) {
+            String[] corrects = req.getParameterValues("questions[" + i + "].correct");
+            if (corrects != null) {
+                for (String c : corrects) {
                     try {
-                        rightIndexes.add(Integer.parseInt(correct));
+                        int index = Integer.parseInt(c);
+                        if (index >= 0 && index < answers.size()) {
+                            rightIndexes.add(index);
+                        }
                     } catch (NumberFormatException ignored) {}
                 }
             }
 
-            // создаём вопрос
+            // Для SINGLE вопросов берем только первый выбранный ответ
+            if (type == QuestionType.SINGLE && !rightIndexes.isEmpty()) {
+                rightIndexes = List.of(rightIndexes.get(0));
+            }
+
+            // Создаем вопрос
             TestQuestion q = new TestQuestion(UUID.randomUUID(), desc, answers, rightIndexes, type);
             questions.add(q);
             i++;
         }
 
-        // получаем пользователя
         User user = (User) req.getSession().getAttribute("user");
         if (user == null) throw new IllegalStateException("Нет пользователя в сессии");
 
         Test test = new Test(UUID.randomUUID(), user.getId(), testName, topic, questions);
-
         testDao.save(test);
     }
+
 
     public void deleteTest(UUID testId) {
         testDao.deleteTest(testId);
