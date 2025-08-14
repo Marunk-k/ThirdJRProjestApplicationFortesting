@@ -1,0 +1,38 @@
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "createdBy" : "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Основы математики",
+    "topic": "math",
+    "questions": [
+      {
+        "description": "Сколько будет 2+2?",
+        "answers": ["3", "4", "5"],
+        "rightAnswerIndex": 1
+      }
+    ]
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "createdBy" : "550e8400-e29b-41d4-a716-446655440000",
+    "name": "История России",
+    "topic": "history",
+    "questions": [
+      {
+        "description": "Кто был первым царём России?",
+        "answers": ["Иван Грозный", "Пётр I", "Александр II"],
+        "rightAnswerIndex": 0
+      },
+      {
+        "description": "Кто был первым царём России?",
+        "answers": ["Иван Грозный", "Пётр I", "Александр II"],
+        "rightAnswerIndex": 0
+      },
+      {
+        "description": "Кто был первым царём России?",
+        "answers": ["Иван Грозный", "Пётр I", "Александр II"],
+        "rightAnswerIndex": 0
+      }
+    ]
+  }
+]
