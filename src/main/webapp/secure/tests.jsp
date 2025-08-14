@@ -1,8 +1,15 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="entity.User" %>
 <%@ page isELIgnored="false" %>
-
+<%
+    User currentUser = (User) session.getAttribute("user");
+    String backUrl = request.getContextPath() + "/secure/userMain"; // по умолчанию
+    if (currentUser != null && "ADMIN".equalsIgnoreCase(currentUser.getRole().toString())) {
+        backUrl = request.getContextPath() + "/secure/admin/adminMain";
+    }
+%>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -138,7 +145,7 @@
 <div class="container">
 
     <div class="top-buttons">
-        <form action="<%= request.getContextPath() %>/secure/userMain" method="get">
+        <form action="<%= backUrl %>" method="get">
             <button class="btn-back" type="submit">&larr; Назад</button>
         </form>
     </div>

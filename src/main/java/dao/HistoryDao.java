@@ -26,8 +26,6 @@ public class HistoryDao {
         if (historyFile.length() == 0) {
             return new ArrayList<>();
         }
-        System.out.println(historyFile.length());
-        System.out.println(objectMapper.readValue(historyFile, new TypeReference<List<History>>() {}));
         return objectMapper.readValue(historyFile, new TypeReference<List<History>>() {});
     }
 

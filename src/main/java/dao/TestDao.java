@@ -2,6 +2,7 @@ package dao;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import entity.History;
 import entity.Test;
 import entity.User;
 import lombok.RequiredArgsConstructor;
@@ -38,5 +39,29 @@ public class TestDao {
                 .filter(test -> test.getId().equals(testId))
                 .findAny()
                 .orElse(null);
+    }
+
+    @SneakyThrows
+    public void save(Test test) {
+        List<Test> tests = findAll();
+        tests.add(test);
+        objectMapper.writeValue(testFile, tests);
+    }
+
+    @SneakyThrows
+    public void deleteTest(UUID testId) {
+        List<Test> tests = findAll();
+        Test testForDeleting = findById(testId);
+        tests.remove(testForDeleting);
+        objectMapper.writeValue(testFile, tests);
+    }
+
+    @SneakyThrows
+    public void update(Test newTest, UUID testId) {
+        List<Test> tests = findAll();
+        Test oldTest = findById(testId);
+        int index = tests.indexOf(oldTest);
+        tests.set(index, newTest);
+        objectMapper.writeValue(testFile, tests);
     }
 }

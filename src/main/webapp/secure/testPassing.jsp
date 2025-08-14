@@ -1,6 +1,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="entity.Test" %>
+<%@ page import="entity.User" %>
 <%@ page isELIgnored="false" %>
 
 <!DOCTYPE html>
@@ -152,6 +153,7 @@
             color: #ff5252;
             margin-left: 4px;
         }
+
     </style>
 </head>
 <body>
@@ -177,11 +179,11 @@
                         <li class="answer-item">
                             <label class="answer-label">
                                 <input
-                                        type="radio"
+                                        type="${question.type == 'SINGLE' ? 'radio' : 'checkbox'}"
                                         class="answer-input"
-                                        name="question_${qLoop.index}"
+                                        name="question_${qLoop.index}${question.type == 'MULTIPLE' ? '[]' : ''}"
                                         value="${aLoop.index}"
-                                required
+                                    ${question.type == 'SINGLE' ? 'required' : ''}
                                 >
                                     ${answer}
                             </label>
@@ -192,7 +194,11 @@
         </c:forEach>
 
         <div class="btn-container">
-            <button type="button" class="btn-back" onclick="history.back()">&larr; Назад</button>
+            <div class="top-buttons">
+                <a href="${pageContext.request.contextPath}/secure/tests">
+                    <button class=".btn-back" type="button">К списку тестов</button>
+                </a>
+            </div>
             <button type="submit" class="btn-submit" id="submitBtn">Проверить результаты</button>
         </div>
     </form>
@@ -204,9 +210,10 @@
         let allAnswered = true;
 
         allQuestions.forEach(question => {
-            const radioInputs = question.querySelectorAll('input[type="radio"]');
+            // Ищем и radio, и checkbox
+            const inputs = question.querySelectorAll('input[type="radio"], input[type="checkbox"]');
 
-            const answered = Array.from(radioInputs).some(input => input.checked);
+            const answered = Array.from(inputs).some(input => input.checked);
 
             if (!answered) {
                 allAnswered = false;
@@ -221,6 +228,7 @@
             alert('Нужно ответить на все вопросы!');
         }
     });
+
 
     document.querySelectorAll('.answer-input').forEach(input => {
         input.addEventListener('change', function() {

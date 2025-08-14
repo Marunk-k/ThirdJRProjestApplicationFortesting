@@ -1,91 +1,101 @@
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-
+<%@ page import="jakarta.servlet.http.HttpSession" %>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Админ-панель</title>
+    <title>Главная страница администратора</title>
     <style>
-        body {
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #1d1f21;
             font-family: 'Segoe UI', Tahoma, sans-serif;
+            color: white;
+        }
+        body {
             background: linear-gradient(135deg, #1d1f21, #0f2027, #203a43, #2c5364);
             background-size: 300% 300%;
             animation: gradient 12s ease infinite;
-            margin: 0;
-            padding: 0;
-            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         @keyframes gradient {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        .container {
-            max-width: 900px;
-            margin: 50px auto;
-            background: rgba(0,0,0,0.4);
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(12px);
-            padding: 30px;
+            padding: 40px;
             border-radius: 15px;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
+            width: 350px;
+            text-align: center;
+            animation: fadeIn 0.4s ease;
         }
-        h2 { text-align: center; margin-bottom: 25px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { padding: 10px; border: 1px solid rgba(255,255,255,0.3); text-align: center; }
-        th { background: rgba(255,255,255,0.2); }
-        button {
-            padding: 6px 12px;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .dashboard-container h2 {
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+        .dashboard-container button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
-            color: white;
+            font-size: 15px;
             transition: all 0.3s ease;
+            color: white;
         }
-        .btn-create { background: #2196F3; }
-        .btn-edit { background: #FFC107; }
-        .btn-delete { background: #F44336; }
-        .btn-stats { background: #4CAF50; }
-        button:hover { transform: scale(1.05); }
-        .top-buttons { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .btn-tests { background: linear-gradient(135deg, #4CAF50, #2e7d32); }
+        .btn-tests:hover { background: linear-gradient(135deg, #66bb6a, #388e3c); transform: scale(1.02); }
+
+        .btn-results { background: linear-gradient(135deg, #2196F3, #1565c0); }
+        .btn-results:hover { background: linear-gradient(135deg, #42a5f5, #1976d2); transform: scale(1.02); }
+
+        .btn-history { background: linear-gradient(135deg, #FF9800, #f57c00); }
+        .btn-history:hover { background: linear-gradient(135deg, #ffb74d, #ef6c00); transform: scale(1.02); }
+
+        .btn-admin { background: linear-gradient(135deg, #9C27B0, #6A1B9A); }
+        .btn-admin:hover { background: linear-gradient(135deg, #ba68c8, #8e24aa); transform: scale(1.02); }
+
+        .btn-logout { background: linear-gradient(135deg, #F44336, #c62828); }
+        .btn-logout:hover { background: linear-gradient(135deg, #e57373, #d32f2f); transform: scale(1.02); }
     </style>
 </head>
 <body>
-<div class="container">
-    <h2>Админ-панель: управление тестами</h2>
+<div class="dashboard-container">
+    <h2>Добро пожаловать!</h2>
 
-    <div class="top-buttons">
-        <form action="<%= request.getContextPath() %>/secure/admin/testCreating" method="get">
-            <button class="btn-create" type="submit">Создать новый тест</button>
-        </form>
-        <form action="${pageContext.request.contextPath}/viewStats" method="get">
-            <button class="btn-stats" type="submit">Просмотр статистики</button>
-        </form>
-    </div>
+    <form action="<%= request.getContextPath() %>/secure/tests" method="get">
+        <button type="submit" class="btn-tests">Тесты</button>
+    </form>
 
-    <table>
-        <tr>
-            <th>Название теста</th>
-            <th>Тема</th>
-            <th>Действия</th>
-        </tr>
-        <c:forEach var="test" items="${tests}">
-            <tr>
-                <td>${test.name}</td>
-                <td>${test.topic}</td>
-                <td>
-                    <form style="display:inline;" action="${pageContext.request.contextPath}/editTest" method="get">
-                        <input type="hidden" name="testId" value="${test.id}">
-                        <button class="btn-edit" type="submit">Редактировать</button>
-                    </form>
-                    <form style="display:inline;" action="${pageContext.request.contextPath}/deleteTest" method="post" onsubmit="return confirm('Вы точно хотите удалить тест?');">
-                        <input type="hidden" name="testId" value="${test.id}">
-                        <button class="btn-delete" type="submit">Удалить</button>
-                    </form>
-                </td>
-            </tr>
-        </c:forEach>
-    </table>
+    <form action="<%= request.getContextPath() %>/secure/myResults" method="get">
+        <button type="submit" class="btn-results">Мои результаты</button>
+    </form>
+
+    <form action="<%= request.getContextPath() %>/secure/history" method="get">
+        <button type="submit" class="btn-history">История</button>
+    </form>
+
+    <form action="<%= request.getContextPath() %>/secure/admin/testManage" method="get">
+        <button type="submit" class="btn-admin">Администрирование тестов</button>
+    </form>
+
+    <form action="<%= request.getContextPath() %>/secure/logout" method="post">
+        <button type="submit" class="btn-logout">Выйти</button>
+    </form>
 </div>
 </body>
 </html>

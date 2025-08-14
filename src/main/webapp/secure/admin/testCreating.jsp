@@ -6,110 +6,121 @@
     <meta charset="UTF-8">
     <title>Создать тест</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            background: linear-gradient(135deg, #1d1f21, #0f2027, #203a43, #2c5364);
-            background-size: 300% 300%;
-            animation: gradient 12s ease infinite;
-            margin: 0; padding: 0; color: white;
-        }
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .container {
-            max-width: 900px;
-            margin: 50px auto;
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(12px);
-            padding: 30px;
-            border-radius: 15px;
-        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: linear-gradient(135deg, #1d1f21, #0f2027, #203a43, #2c5364); color: white; margin: 0; padding: 0;}
+        .container { max-width: 900px; margin: 50px auto; background: rgba(0,0,0,0.4); padding: 30px; border-radius: 15px; }
         h2 { text-align: center; margin-bottom: 25px; }
-        input, textarea, select { width: 100%; margin-bottom: 10px; padding: 8px; border-radius: 5px; border: none; }
-        button {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            color: white;
-            transition: all 0.3s ease;
-            margin-right: 5px;
-        }
+        input[type="text"], textarea, select { width: 100%; margin-bottom: 10px; padding: 8px; border-radius: 5px; border: none; box-sizing: border-box;}
+        button { padding: 6px 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; color: white; margin-right: 5px;}
         .btn-add { background: #2196F3; }
         .btn-remove { background: #F44336; }
         .btn-submit { background: #4CAF50; }
-        button:hover { transform: scale(1.05); }
-        .question { margin-bottom: 20px; padding: 15px; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; position: relative; }
-        .question h4 { margin-top: 0; }
-        .answers input { margin-bottom: 5px; }
-        .actions { margin-bottom: 15px; }
+        .btn-back { background: gray; }
+        .question { margin-bottom: 20px; padding: 15px; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; }
+        .answers div { display: flex; align-items: center; gap: 10px; margin-bottom: 5px;}
+        .answers input[type="text"] { flex: 1; }
+        .answers input[type="checkbox"] { transform: scale(1.3); cursor: pointer; }
     </style>
     <script>
         let questionCount = 0;
 
         function addQuestion() {
-            questionCount++;
             const container = document.getElementById("questionsContainer");
-
             const div = document.createElement("div");
             div.className = "question";
-            div.id = "question-" + questionCount;
 
             div.innerHTML = `
-                <h4>Вопрос ${questionCount}</h4>
-                <textarea name="questions[${questionCount}].description" placeholder="Текст вопроса" required></textarea>
-                <div class="answers" id="answers-${questionCount}">
-                    <input type="text" name="questions[${questionCount}].answers[0]" placeholder="Ответ 1" required>
-                    <input type="text" name="questions[${questionCount}].answers[1]" placeholder="Ответ 2" required>
-                </div>
-                <div class="actions">
-                    <button type="button" onclick="addAnswer(${questionCount})" class="btn-add">Добавить ответ</button>
-                    <button type="button" onclick="removeQuestion(${questionCount})" class="btn-remove">Удалить вопрос</button>
-                </div>
-                <label>Правильный ответ:
-                    <select name="questions[${questionCount}].rightAnswerIndex" id="rightAnswer-${questionCount}" required>
-                        <option value="0">Ответ 1</option>
-                        <option value="1">Ответ 2</option>
+                <h4>Вопрос</h4>
+                <textarea name="" placeholder="Текст вопроса" required></textarea>
+                <label>Тип вопроса:
+                    <select name="" class="question-type" onchange="updateCheckboxBehavior(this)">
+                        <option value="SINGLE">Один правильный</option>
+                        <option value="MULTIPLE">Несколько правильных</option>
                     </select>
                 </label>
+                <div class="answers">
+                    <div>
+                        <input type="text" name="" placeholder="Ответ 1" required>
+                        <input type="checkbox" name="" value="0" onchange="handleSingleChoice(this)">
+                    </div>
+                    <div>
+                        <input type="text" name="" placeholder="Ответ 2" required>
+                        <input type="checkbox" name="" value="1" onchange="handleSingleChoice(this)">
+                    </div>
+                </div>
+                <div class="actions">
+                    <button type="button" onclick="addAnswer(this)" class="btn-add">Добавить ответ</button>
+                    <button type="button" onclick="removeQuestion(this)" class="btn-remove">Удалить вопрос</button>
+                </div>
             `;
             container.appendChild(div);
+            renumberQuestions();
         }
 
-        function addAnswer(questionId) {
-            const answersDiv = document.getElementById("answers-" + questionId);
-            const rightSelect = document.getElementById("rightAnswer-" + questionId);
+        function addAnswer(btn) {
+            const answersDiv = btn.parentElement.parentElement.querySelector('.answers');
             const index = answersDiv.children.length;
-
-            const input = document.createElement("input");
-            input.type = "text";
-            input.name = `questions[${questionId}].answers[${index}]`;
-            input.placeholder = `Ответ ${index + 1}`;
-            input.required = true;
-            answersDiv.appendChild(input);
-
-            const option = document.createElement("option");
-            option.value = index;
-            option.text = `Ответ ${index + 1}`;
-            rightSelect.appendChild(option);
+            const wrapper = document.createElement("div");
+            wrapper.innerHTML = `
+                <input type="text" name="" placeholder="Ответ ${index + 1}" required>
+                <input type="checkbox" name="" value="${index}" onchange="handleSingleChoice(this)">
+            `;
+            answersDiv.appendChild(wrapper);
+            renumberQuestions();
         }
 
-        function removeQuestion(questionId) {
-            const div = document.getElementById("question-" + questionId);
-            div.remove();
+        function removeQuestion(btn) {
+            btn.closest('.question').remove();
+            renumberQuestions();
+        }
+
+        function renumberQuestions() {
+            const questions = document.querySelectorAll('.question');
+            questions.forEach((q, qIdx) => {
+                q.querySelector('h4').textContent = `Вопрос ${qIdx + 1}`;
+                const textarea = q.querySelector('textarea');
+                textarea.name = `questions[${qIdx}].description`;
+
+                const select = q.querySelector('select.question-type');
+                select.name = `questions[${qIdx}].type`;
+
+                const answers = q.querySelectorAll('.answers div');
+                answers.forEach((ansDiv, aIdx) => {
+                    ansDiv.querySelector('input[type="text"]').name = `questions[${qIdx}].answers[${aIdx}]`;
+                    ansDiv.querySelector('input[type="checkbox"]').name = `questions[${qIdx}].correct`;
+                    ansDiv.querySelector('input[type="checkbox"]').value = aIdx;
+                });
+            });
+        }
+
+        function updateCheckboxBehavior(select) {
+            const type = select.value;
+            const checkboxes = select.closest('.question').querySelectorAll('input[type="checkbox"]');
+            if(type === 'SINGLE') {
+                let found = false;
+                checkboxes.forEach(cb => {
+                    if(found) cb.checked = false;
+                    if(cb.checked) found = true;
+                });
+            }
+        }
+
+        function handleSingleChoice(checkbox) {
+            const q = checkbox.closest('.question');
+            const type = q.querySelector('select.question-type').value;
+            if(type === 'SINGLE' && checkbox.checked){
+                q.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    if(cb !== checkbox) cb.checked = false;
+                });
+            }
         }
     </script>
 </head>
 <body>
 <div class="container">
     <h2>Создать новый тест</h2>
-    <form action="<%= request.getContextPath() %>/admin/createTest" method="post">
+    <form action="<%= request.getContextPath() %>/secure/admin/testCreating" method="post">
         <label>Название теста:</label>
         <input type="text" name="name" placeholder="Название" required>
-
         <label>Тема теста:</label>
         <input type="text" name="topic" placeholder="Тема" required>
 
@@ -117,6 +128,7 @@
 
         <button type="button" onclick="addQuestion()" class="btn-add">Добавить вопрос</button>
         <button type="submit" class="btn-submit">Сохранить тест</button>
+        <button type="button" onclick="history.back()" class="btn-back">Назад</button>
     </form>
 </div>
 </body>

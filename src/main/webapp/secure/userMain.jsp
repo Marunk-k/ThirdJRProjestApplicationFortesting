@@ -6,16 +6,24 @@
     <meta charset="UTF-8">
     <title>Главная страница</title>
     <style>
-        body {
+        /* Сразу убираем белый фон */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #1d1f21; /* запасной фон на случай задержки CSS */
             font-family: 'Segoe UI', Tahoma, sans-serif;
+            color: white;
+        }
+
+        body {
             background: linear-gradient(135deg, #1d1f21, #0f2027, #203a43, #2c5364);
             background-size: 300% 300%;
             animation: gradient 12s ease infinite;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            min-height: 100vh;
         }
 
         @keyframes gradient {
@@ -32,12 +40,11 @@
             box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
             width: 350px;
             text-align: center;
-            color: white;
-            animation: fadeIn 0.6s ease;
+            animation: fadeIn 0.4s ease;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
+            from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -69,12 +76,9 @@
 
         .btn-logout { background: linear-gradient(135deg, #F44336, #c62828); }
         .btn-logout:hover { background: linear-gradient(135deg, #e57373, #d32f2f); transform: scale(1.02); }
-
     </style>
 </head>
 <body>
-
-
 <div class="dashboard-container">
     <h2>Добро пожаловать!</h2>
 
@@ -94,6 +98,5 @@
         <button type="submit" class="btn-logout">Выйти</button>
     </form>
 </div>
-
 </body>
 </html>

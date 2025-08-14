@@ -1,5 +1,6 @@
 package servlet.auth;
 
+import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebInitParam;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,11 +14,11 @@ import java.io.IOException;
 public class RegisterServlet extends AuthServlet {
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
         if (authService.register(req)) {
             resp.sendRedirect("/login");
         } else {
-            req.setAttribute("registrationError", "Username is not unique");
+            resp.sendRedirect("/register");
         }
     }
 }

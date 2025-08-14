@@ -1,7 +1,14 @@
+<%@ page import="entity.User" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page isELIgnored="false" %>
-
+<%
+    User currentUser = (User) session.getAttribute("user");
+    String backUrl = request.getContextPath() + "/secure/userMain"; // по умолчанию
+    if (currentUser != null && "ADMIN".equalsIgnoreCase(currentUser.getRole().toString())) {
+        backUrl = request.getContextPath() + "/secure/admin/adminMain";
+    }
+%>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -84,6 +91,7 @@
         .score-high { color: #81c784; font-weight: bold; }
         .score-medium { color: #ffd54f; font-weight: bold; }
         .score-low { color: #e57373; font-weight: bold; }
+        .btn-back { background: #2196F3; }
     </style>
 </head>
 <body>
@@ -126,10 +134,10 @@
         </c:otherwise>
     </c:choose>
 
-    <div class="btn-container">
-        <a href="${pageContext.request.contextPath}/secure/userMain">
-            <button class="btn-menu">В главное меню</button>
-        </a>
+    <div class="top-buttons">
+        <form action="<%= backUrl %>" method="get">
+            <button class="btn-back" type="submit">&larr; Назад</button>
+        </form>
     </div>
 </div>
 

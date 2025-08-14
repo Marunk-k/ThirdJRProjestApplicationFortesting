@@ -1,7 +1,7 @@
+<%@ page import="entity.User" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page isELIgnored="false" %>
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -139,9 +139,6 @@
     </div>
 
     <div class="btn-container">
-        <a href="${pageContext.request.contextPath}/secure/userMain">
-            <button class="btn-menu">В главное меню</button>
-        </a>
         <a href="${pageContext.request.contextPath}/secure/tests">
             <button class="btn-tests">К списку тестов</button>
         </a>

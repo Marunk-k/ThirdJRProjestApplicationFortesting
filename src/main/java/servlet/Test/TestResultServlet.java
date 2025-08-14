@@ -14,7 +14,7 @@ public class TestResultServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         TestResult result = (TestResult) req.getSession().getAttribute("testResult");
-        System.out.println(result);
+
         if (result == null) {
             resp.sendRedirect(req.getContextPath() + "/secure/tests");
             return;
