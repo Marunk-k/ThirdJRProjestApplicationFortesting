@@ -38,12 +38,13 @@ public class TestDao {
                             Test test = objectMapper.readValue(path.toFile(), Test.class);
                             tests.add(test);
                         } catch (Exception e) {
-
+                            e.printStackTrace();
                         }
                     });
         }
         return tests;
     }
+
 
     public List<Test> findByTopic(String topic) {
         return findAll().stream()

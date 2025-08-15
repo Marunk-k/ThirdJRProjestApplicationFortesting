@@ -210,7 +210,6 @@
         let allAnswered = true;
 
         allQuestions.forEach(question => {
-            // Ищем и radio, и checkbox
             const inputs = question.querySelectorAll('input[type="radio"], input[type="checkbox"]');
 
             const answered = Array.from(inputs).some(input => input.checked);
@@ -228,7 +227,6 @@
             alert('Нужно ответить на все вопросы!');
         }
     });
-
 
     document.querySelectorAll('.answer-input').forEach(input => {
         input.addEventListener('change', function() {

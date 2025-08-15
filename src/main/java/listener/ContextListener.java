@@ -24,7 +24,7 @@ public class ContextListener implements ServletContextListener {
 
         ObjectMapper mapper = new ObjectMapper();
         File userFile = new File("C:\\Users\\User\\Desktop\\worrrk\\ThirdJRProject\\src\\main\\resources\\user.json");
-        File testFile = new File("C:\\Users\\User\\Desktop\\worrrk\\ThirdJRProject\\src\\main\\resources\\test.json");
+        File testFile = new File("src/main/resources/tests");
         File historyFile = new File("C:\\Users\\User\\Desktop\\worrrk\\ThirdJRProject\\src\\main\\resources\\history.json");
         context.setAttribute("mapper", mapper);
         context.setAttribute("userFile", userFile);

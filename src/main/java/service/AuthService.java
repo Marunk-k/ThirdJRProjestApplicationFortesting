@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.mindrot.jbcrypt.BCrypt;
+import util.AuthResult;
 import util.CredentialsExtractor;
 import util.Role;
 
@@ -14,7 +16,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @RequiredArgsConstructor
 public class AuthService {
@@ -23,43 +24,44 @@ public class AuthService {
     private final CredentialsExtractor credentialsExtractor;
     private final UserService userService;
 
-    public void authenticate(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    public AuthResult authenticate(HttpServletRequest req) {
         Credentials credentials = credentialsExtractor.extract(req);
 
         loginAttempts.putIfAbsent(credentials.getLogin(), new LoginAttempt());
         LoginAttempt loginAttempt = loginAttempts.get(credentials.getLogin());
 
-        if (loginAttempt.isBlockedExpired()) {
-            loginAttempt.setCountOfAttempts(new AtomicInteger(0));
+        if (loginAttempt.isBlocked()) {
+            return new AuthResult(AuthResult.Status.BLOCKED);
         }
 
-        if (loginAttempt.isBlocked()) {
-            //req.setAttribute(429);
+        if (loginAttempt.isBlockedExpired()) {
+            loginAttempt.reset();
         }
 
         Optional<User> optionalUser = userService.findUserByCredentials(credentials);
 
         if (optionalUser.isPresent()) {
+            loginAttempt.reset();
             User user = optionalUser.get();
             req.getSession().setAttribute("user", user);
+            return new AuthResult(AuthResult.Status.SUCCESS);
         } else {
             loginAttempt.incrementCountOfAttempts();
+            return new AuthResult(AuthResult.Status.FAILED);
         }
     }
 
+
     public boolean register(HttpServletRequest req) throws IOException {
         Credentials credentials = credentialsExtractor.extract(req);
+        String hashedPassword = BCrypt.hashpw(credentials.getPassword(), BCrypt.gensalt());
+        credentials.setPassword(hashedPassword);
         if (userService.isExist(credentials.getLogin())) {
             return false;
         } else {
             userService.save(credentials);
             return true;
         }
-    }
-
-    public boolean isAuthenticate(HttpServletRequest req) {
-        User user = (User)req.getSession().getAttribute("user");
-        return user != null;
     }
 
     public void logout(HttpServletRequest req, HttpServletResponse resp) {
@@ -70,7 +72,7 @@ public class AuthService {
     }
 
     public boolean isAdmin(HttpServletRequest req) {
-        HttpSession session = ((HttpServletRequest) req).getSession();
+        HttpSession session = req.getSession();
         User user = (User) session.getAttribute("user");
         Role role = user.getRole();
         return role.equals(Role.ADMIN);

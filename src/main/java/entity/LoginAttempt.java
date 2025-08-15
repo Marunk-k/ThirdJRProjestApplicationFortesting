@@ -14,18 +14,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 @NoArgsConstructor
 public class LoginAttempt {
     private AtomicInteger countOfAttempts = new AtomicInteger(0);
-    private LocalDateTime lastLogin;
+    private LocalDateTime blockedUntil;
 
     public void incrementCountOfAttempts() {
-        countOfAttempts.getAndIncrement();
-        lastLogin = LocalDateTime.now();
+        int attempts = countOfAttempts.incrementAndGet();
+        if (attempts >= 2) {
+            blockedUntil = LocalDateTime.now().plusMinutes(5);
+        }
     }
 
     public boolean isBlocked() {
-        return (lastLogin == null || (countOfAttempts.get() >= 3 && !lastLogin.isBefore(LocalDateTime.now().minusMinutes(5))));
+        return blockedUntil != null && LocalDateTime.now().isBefore(blockedUntil);
     }
 
     public boolean isBlockedExpired() {
-        return lastLogin == null || lastLogin.isBefore(LocalDateTime.now().minusMinutes(5));
+        return blockedUntil != null && LocalDateTime.now().isAfter(blockedUntil);
+    }
+
+    public void reset() {
+        countOfAttempts.set(0);
+        blockedUntil = null;
     }
 }
+

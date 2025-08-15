@@ -4,6 +4,7 @@ import dao.UserDao;
 import entity.Credentials;
 import entity.User;
 import lombok.RequiredArgsConstructor;
+import org.mindrot.jbcrypt.BCrypt;
 import util.Role;
 
 import java.util.List;
@@ -32,12 +33,25 @@ public class UserService {
     }
 
     public Optional<User> findUserByCredentials(Credentials credentials) {
-        List<User> users = findAll();
+        Optional<User> userOpt = findAll().stream()
+                .filter(user -> user.getLogin().equals(credentials.getLogin()))
+                .findFirst();
 
-        return users.stream()
-                .filter(user1 -> user1.getLogin().equals(credentials.getLogin()))
-                .findAny();
+        if (userOpt.isPresent()) {
+            User userFromDb = userOpt.get();
+            String enteredPassword = credentials.getPassword();
+            String storedHash = userFromDb.getPassword();
+
+            if (BCrypt.checkpw(enteredPassword, storedHash)) {
+                return userOpt;
+            } else {
+                return Optional.empty();
+            }
+        }
+
+        return Optional.empty();
     }
+
 
     public boolean isExist(String login) {
         List<User> users = findAll();
