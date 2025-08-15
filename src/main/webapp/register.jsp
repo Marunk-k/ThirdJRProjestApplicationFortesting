@@ -85,30 +85,21 @@
             background: linear-gradient(135deg, #42a5f5, #1976d2);
             transform: scale(1.02);
         }
-        .error-input {
-            border: 1px solid #ff5757 !important;
-            background: rgba(255, 87, 87, 0.1) !important;
-        }
     </style>
 
     <script>
-        // Функция для проверки и отображения ошибки
         function checkForError() {
             const errorMessage = "<%= session.getAttribute("registerError") %>";
 
             if (errorMessage && errorMessage !== "null") {
-                // Показываем всплывающее окно
                 alert(errorMessage);
 
-                // Подсвечиваем поле логина
                 document.querySelector('input[name="login"]').classList.add('error-input');
 
-                // Очищаем ошибку из сессии
                 fetch('/clearRegisterError', { method: 'POST' });
             }
         }
 
-        // Вызываем при загрузке страницы
         window.onload = checkForError;
     </script>
 </head>

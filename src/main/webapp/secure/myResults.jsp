@@ -4,7 +4,7 @@
 <%@ page isELIgnored="false" %>
 <%
     User currentUser = (User) session.getAttribute("user");
-    String backUrl = request.getContextPath() + "/secure/userMain"; // по умолчанию
+    String backUrl = request.getContextPath() + "/secure/userMain";
     if (currentUser != null && "ADMIN".equalsIgnoreCase(currentUser.getRole().toString())) {
         backUrl = request.getContextPath() + "/secure/admin/adminMain";
     }
@@ -66,10 +66,6 @@
         tr:hover {
             background: rgba(255, 255, 255, 0.05);
         }
-        .btn-container {
-            text-align: center;
-            margin-top: 30px;
-        }
         button {
             padding: 12px 25px;
             border: none;
@@ -88,10 +84,9 @@
             background: linear-gradient(135deg, #42a5f5, #1565c0);
             transform: translateY(-3px);
         }
-        .score-high { color: #81c784; font-weight: bold; }
-        .score-medium { color: #ffd54f; font-weight: bold; }
-        .score-low { color: #e57373; font-weight: bold; }
-        .btn-back { background: #2196F3; }
+        .btn-back {
+            background: #2196F3;
+        }
     </style>
 </head>
 <body>

@@ -15,10 +15,18 @@
         .btn-remove { background: #F44336; }
         .btn-submit { background: #4CAF50; }
         .btn-back { background: gray; }
-        .question { margin-bottom: 20px; padding: 15px; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; }
         .answers div { display: flex; align-items: center; gap: 10px; margin-bottom: 5px;}
         .answers input[type="text"] { flex: 1; }
         .answers input[type="checkbox"] { transform: scale(1.3); cursor: pointer; }
+        .time-limit {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .time-limit input {
+            width: 100px;
+        }
     </style>
     <script>
         let questionCount = 0;
@@ -87,7 +95,6 @@
                 answers.forEach((ansDiv, aIdx) => {
                     ansDiv.querySelector('input[type="text"]').name = `questions[${qIdx}].answers[${aIdx}]`;
 
-                    // ОСНОВНОЕ ИСПРАВЛЕНИЕ: одинаковое имя для всех чекбоксов вопроса
                     const checkbox = ansDiv.querySelector('input[type="checkbox"]');
                     checkbox.name = `questions[${qIdx}].correct`;
                     checkbox.value = aIdx;
@@ -95,19 +102,16 @@
             });
         }
 
-        // Обновляем тип ответов при изменении селектора
         function updateAnswerType(select) {
             const questionDiv = select.closest('.question');
             const answersDiv = questionDiv.querySelector('.answers');
             const isMultiple = select.value === 'MULTIPLE';
 
-            // Обновляем все чекбоксы
             answersDiv.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
                 checkbox.name = `questions[${getQuestionIndex(questionDiv)}].correct`;
             });
         }
 
-        // Получаем индекс вопроса
         function getQuestionIndex(questionDiv) {
             const questions = Array.from(document.querySelectorAll('.question'));
             return questions.indexOf(questionDiv);
@@ -120,8 +124,14 @@
     <form action="<%= request.getContextPath() %>/secure/admin/testCreating" method="post">
         <label>Название теста:</label>
         <input type="text" name="name" placeholder="Название" required>
+
         <label>Тема теста:</label>
         <input type="text" name="topic" placeholder="Тема" required>
+
+        <div class="time-limit">
+            <label>Лимит времени (минут):</label>
+            <input type="number" name="timeLimitMinutes" min="1" value="30" required>
+        </div>
 
         <div id="questionsContainer"></div>
 

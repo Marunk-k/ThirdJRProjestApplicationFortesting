@@ -15,24 +15,45 @@ public class LoginServlet extends AuthServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         AuthResult result = authService.authenticate(req);
-        System.out.println(result.getStatus());
+        handleAuthenticationResult(result, req, resp);
+    }
+
+    private void handleAuthenticationResult(AuthResult result, HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
         switch (result.getStatus()) {
             case SUCCESS:
-                if (authService.isAdmin(req)) {
-                    resp.sendRedirect("/secure/admin/adminMain");
-                } else {
-                    resp.sendRedirect("/secure/userMain");
-                }
+                handleSuccessfulAuthentication(req, resp);
                 break;
-
             case BLOCKED:
-                resp.sendRedirect("/blocked.jsp");
+                handleBlockedAuthentication(resp);
                 break;
-
             case FAILED:
-                req.getSession().setAttribute("error", "Неверный логин или пароль");
-                resp.sendRedirect("/login.jsp");
+                handleFailedAuthentication(req, resp);
                 break;
+            default:
+                handleUnexpectedStatus(resp);
         }
+    }
+
+    private void handleSuccessfulAuthentication(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        String redirectPath = authService.isAdmin(req)
+                ? "/secure/admin/adminMain"
+                : "/secure/userMain";
+        resp.sendRedirect(redirectPath);
+    }
+
+    private void handleBlockedAuthentication(HttpServletResponse resp) throws IOException {
+        resp.sendRedirect("/blocked.jsp");
+    }
+
+    private void handleFailedAuthentication(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        req.getSession().setAttribute("error", "Неверный логин или пароль");
+        resp.sendRedirect("/login.jsp");
+    }
+
+    private void handleUnexpectedStatus(HttpServletResponse resp) throws IOException {
+        resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected authentication status");
     }
 }

@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import service.TestService;
 
 import java.io.IOException;
-import java.util.UUID;
 
 @WebServlet(urlPatterns = "/secure/admin/testManage")
 public class TestManageServlet extends HttpServlet {
@@ -20,21 +19,15 @@ public class TestManageServlet extends HttpServlet {
         testService = (TestService) config.getServletContext().getAttribute("testService");
     }
 
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String topicFilter = req.getParameter("topicFilter");
-
-        testService.prepareTests(req, topicFilter);
-
-        req.setAttribute("currentFilter", topicFilter);
+        testService.prepareTests(req);
         req.getRequestDispatcher("/secure/admin/testManage.jsp").forward(req, resp);
     }
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        UUID testId = UUID.fromString(req.getParameter("testId"));
-        testService.deleteTest(testId);
+        testService.deleteTest(req);
         resp.sendRedirect("/secure/admin/testManage");
     }
 }

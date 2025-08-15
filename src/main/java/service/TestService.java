@@ -1,7 +1,6 @@
 package service;
 
 import dao.TestDao;
-import dao.UserDao;
 import entity.Test;
 import entity.TestQuestion;
 import entity.TestResult;
@@ -18,61 +17,76 @@ public class TestService {
 
     private final TestDao testDao;
 
-    public void prepareTests(HttpServletRequest req, String topicFilter) {
-        List<Test> tests;
+    public void prepareTests(HttpServletRequest req) {
+        String topicFilter = req.getParameter("topicFilter");
+        req.setAttribute("currentFilter", topicFilter);
 
-        if (topicFilter != null && !topicFilter.isEmpty()) {
-            tests = testDao.findByTopic(topicFilter);
-        } else {
-            tests = testDao.findAll();
-        }
-
+        List<Test> tests = getFilteredTests(topicFilter);
         req.setAttribute("tests", tests);
 
-        Set<String> uniqueTopics = testDao.findAll().stream()
-                .map(Test::getTopic)
-                .collect(Collectors.toSet());
-
+        Set<String> uniqueTopics = getAllUniqueTopics();
         req.setAttribute("uniqueTopics", uniqueTopics);
     }
 
-    public void prepareTestById(HttpServletRequest req, UUID testId) {
+    private List<Test> getFilteredTests(String topicFilter) {
+        if (topicFilter != null && !topicFilter.isEmpty()) {
+            return testDao.findByTopic(topicFilter);
+        }
+        return testDao.findAll();
+    }
+
+    private Set<String> getAllUniqueTopics() {
+        return testDao.findAll().stream()
+                .map(Test::getTopic)
+                .collect(Collectors.toSet());
+    }
+
+    public void prepareTest(HttpServletRequest req) {
+        UUID testId = UUID.fromString(req.getParameter("testId"));
         Test test = testDao.findById(testId);
         req.setAttribute("test", test);
     }
 
     public TestResult extractResult(HttpServletRequest req) {
         UUID testId = UUID.fromString(req.getParameter("testId"));
-        Test test = getTestById(testId);
+        Test test = testDao.findById(testId);
+        Map<Integer, List<Integer>> userAnswers = extractUserAnswers(req, test);
+        return evaluateTest(test, userAnswers);
+    }
 
+    private Map<Integer, List<Integer>> extractUserAnswers(HttpServletRequest req, Test test) {
         Map<Integer, List<Integer>> userAnswers = new HashMap<>();
 
         for (int i = 0; i < test.getQuestions().size(); i++) {
             TestQuestion question = test.getQuestions().get(i);
-            String paramName = "question_" + i;
+            List<Integer> answerIndexes = extractAnswerForQuestion(req, i, question);
 
-            String[] values;
-            if (question.getType() == QuestionType.MULTIPLE) {
-                values = req.getParameterValues(paramName + "[]");
-            } else {
-                String singleVal = req.getParameter(paramName);
-                values = singleVal != null ? new String[]{ singleVal } : null;
-            }
-
-            if (values != null) {
-                List<Integer> indexes = Arrays.stream(values)
-                        .map(Integer::parseInt)
-                        .collect(Collectors.toList());
-                userAnswers.put(i, indexes);
+            if (!answerIndexes.isEmpty()) {
+                userAnswers.put(i, answerIndexes);
             }
         }
 
-        return evaluateTest(test, userAnswers);
+        return userAnswers;
     }
 
+    private List<Integer> extractAnswerForQuestion(HttpServletRequest req, int questionIndex, TestQuestion question) {
+        String paramName = "question_" + questionIndex;
+        String[] values;
 
-    private Test getTestById(UUID testId) {
-        return testDao.findById(testId);
+        if (question.getType() == QuestionType.MULTIPLE) {
+            values = req.getParameterValues(paramName + "[]");
+        } else {
+            String singleVal = req.getParameter(paramName);
+            values = singleVal != null ? new String[]{singleVal} : null;
+        }
+
+        if (values == null) {
+            return Collections.emptyList();
+        }
+
+        return Arrays.stream(values)
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
     }
 
     private TestResult evaluateTest(Test test, Map<Integer, List<Integer>> userAnswers) {
@@ -81,19 +95,29 @@ public class TestService {
 
         for (int i = 0; i < totalQuestions; i++) {
             TestQuestion question = test.getQuestions().get(i);
-            List<Integer> correct = question.getRightAnswerIndexes();
-            List<Integer> given = userAnswers.getOrDefault(i, Collections.emptyList());
+            List<Integer> correctIndexes = question.getRightAnswerIndexes();
+            List<Integer> givenIndexes = userAnswers.getOrDefault(i, Collections.emptyList());
 
-            if (question.getType() == QuestionType.SINGLE) {
-                if (given.size() == 1 && correct.contains(given.get(0))) {
-                    correctAnswers++;
-                }
-            } else { // MULTIPLE
-                if (new HashSet<>(given).equals(new HashSet<>(correct))) {
-                    correctAnswers++;
-                }
+            if (isAnswerCorrect(question, correctIndexes, givenIndexes)) {
+                correctAnswers++;
             }
         }
+
+        return buildTestResult(test, totalQuestions, correctAnswers);
+    }
+
+    private boolean isAnswerCorrect(TestQuestion question,
+                                    List<Integer> correctIndexes,
+                                    List<Integer> givenIndexes) {
+        if (question.getType() == QuestionType.SINGLE) {
+            return givenIndexes.size() == 1 && correctIndexes.contains(givenIndexes.get(0));
+        } else {
+            return new HashSet<>(givenIndexes).equals(new HashSet<>(correctIndexes));
+        }
+    }
+
+    private TestResult buildTestResult(Test test, int totalQuestions, int correctAnswers) {
+        int score = calculateScore(totalQuestions, correctAnswers);
 
         return TestResult.builder()
                 .testId(test.getId())
@@ -101,15 +125,35 @@ public class TestService {
                 .testTopic(test.getTopic())
                 .totalQuestions(totalQuestions)
                 .correctAnswers(correctAnswers)
-                .score((int) Math.round((double) correctAnswers / totalQuestions * 100))
+                .score(score)
                 .build();
     }
 
+    private int calculateScore(int totalQuestions, int correctAnswers) {
+        return (int) Math.round((double) correctAnswers / totalQuestions * 100);
+    }
 
     public void saveNewTest(HttpServletRequest req) {
         String testName = req.getParameter("name");
         String topic = req.getParameter("topic");
+        int timeLimitMinutes = extractTimeLimit(req);
+        List<TestQuestion> questions = extractQuestionsFromRequest(req);
+        User user = getCurrentUser(req);
 
+        Test test = new Test(UUID.randomUUID(), user.getId(), testName, topic, questions, timeLimitMinutes);
+        testDao.save(test);
+    }
+
+    private int extractTimeLimit(HttpServletRequest req) {
+        String timeLimitParam = req.getParameter("timeLimitMinutes");
+        if (timeLimitParam != null && !timeLimitParam.isEmpty()) {
+            return Integer.parseInt(timeLimitParam);
+        }
+
+        return 5;
+    }
+
+    private List<TestQuestion> extractQuestionsFromRequest(HttpServletRequest req) {
         List<TestQuestion> questions = new ArrayList<>();
         int i = 0;
 
@@ -117,125 +161,165 @@ public class TestService {
             String desc = req.getParameter("questions[" + i + "].description");
             if (desc == null || desc.trim().isEmpty()) break;
 
-            String typeStr = req.getParameter("questions[" + i + "].type");
-            if (typeStr == null) typeStr = "SINGLE";
-            QuestionType type = QuestionType.valueOf(typeStr);
-
-            // Чтение ответов
-            List<String> answers = new ArrayList<>();
-            int j = 0;
-            while (true) {
-                String answerText = req.getParameter("questions[" + i + "].answers[" + j + "]");
-                if (answerText == null) break;
-                answers.add(answerText);
-                j++;
-            }
-
-            // Чтение правильных ответов - ОСНОВНОЕ ИСПРАВЛЕНИЕ
-            List<Integer> rightIndexes = new ArrayList<>();
-            String[] corrects = req.getParameterValues("questions[" + i + "].correct");
-            if (corrects != null) {
-                for (String c : corrects) {
-                    try {
-                        int index = Integer.parseInt(c);
-                        if (index >= 0 && index < answers.size()) {
-                            rightIndexes.add(index);
-                        }
-                    } catch (NumberFormatException ignored) {}
-                }
-            }
-
-            // Для SINGLE вопросов берем только первый выбранный ответ
-            if (type == QuestionType.SINGLE && !rightIndexes.isEmpty()) {
-                rightIndexes = List.of(rightIndexes.get(0));
-            }
-
-            // Создаем вопрос
-            TestQuestion q = new TestQuestion(UUID.randomUUID(), desc, answers, rightIndexes, type);
-            questions.add(q);
+            TestQuestion question = createQuestion(req, i);
+            questions.add(question);
             i++;
         }
 
-        User user = (User) req.getSession().getAttribute("user");
-        if (user == null) throw new IllegalStateException("Нет пользователя в сессии");
-
-        Test test = new Test(UUID.randomUUID(), user.getId(), testName, topic, questions);
-        testDao.save(test);
+        return questions;
     }
 
+    private TestQuestion createQuestion(HttpServletRequest req, int questionIndex) {
+        String desc = req.getParameter("questions[" + questionIndex + "].description");
+        QuestionType type = extractQuestionType(req, questionIndex);
+        List<String> answers = extractAnswers(req, questionIndex);
+        List<Integer> rightIndexes = extractCorrectAnswers(req, questionIndex, answers.size(), type);
 
-    public void deleteTest(UUID testId) {
+        return new TestQuestion(
+                UUID.randomUUID(),
+                desc,
+                answers,
+                rightIndexes,
+                type
+        );
+    }
+
+    private QuestionType extractQuestionType(HttpServletRequest req, int questionIndex) {
+        String typeStr = req.getParameter("questions[" + questionIndex + "].type");
+        if (typeStr == null) {
+            return QuestionType.SINGLE;
+        }
+        return QuestionType.valueOf(typeStr);
+    }
+
+    private List<String> extractAnswers(HttpServletRequest req, int questionIndex) {
+        List<String> answers = new ArrayList<>();
+        int j = 0;
+
+        while (true) {
+            String answerText = req.getParameter("questions[" + questionIndex + "].answers[" + j + "]");
+            if (answerText == null) {
+                break;
+            }
+            answers.add(answerText);
+            j++;
+        }
+
+        return answers;
+    }
+
+    private List<Integer> extractCorrectAnswers(HttpServletRequest req,
+                                                int questionIndex,
+                                                int answersCount,
+                                                QuestionType type) {
+        List<Integer> rightIndexes = new ArrayList<>();
+        String[] corrects = req.getParameterValues("questions[" + questionIndex + "].correct");
+
+        if (corrects != null) {
+            for (String c : corrects) {
+                int index = Integer.parseInt(c);
+                if (index >= 0 && index < answersCount) {
+                    rightIndexes.add(index);
+                }
+            }
+        }
+
+        if (type == QuestionType.SINGLE && !rightIndexes.isEmpty()) {
+            return List.of(rightIndexes.get(0));
+        }
+
+        return rightIndexes;
+    }
+
+    private User getCurrentUser(HttpServletRequest req) {
+        return (User) req.getSession().getAttribute("user");
+    }
+
+    public void deleteTest(HttpServletRequest req) {
+        UUID testId = UUID.fromString(req.getParameter("testId"));
         testDao.deleteTest(testId);
     }
 
     public void updateTest(HttpServletRequest req) {
-        // 1. Базовые поля теста (с правильными именами)
-        String testIdStr = req.getParameter("testId");
-        UUID testId = UUID.fromString(testIdStr);
-        String name = req.getParameter("testName");      // исправлено
-        String topic = req.getParameter("testTopic");    // исправлено
+        UUID testId = UUID.fromString(req.getParameter("testId"));
+        String name = req.getParameter("testName");
+        String topic = req.getParameter("testTopic");
+        int timeLimitMinutes = extractTimeLimit(req);
+        List<TestQuestion> questions = extractUpdatedQuestions(req);
+        Test originalTest = testDao.findById(testId);
 
+        Test test = buildUpdatedTest(testId, name, topic, timeLimitMinutes, questions, originalTest);
+        testDao.update(test, testId);
+    }
+
+    private List<TestQuestion> extractUpdatedQuestions(HttpServletRequest req) {
         List<TestQuestion> questions = new ArrayList<>();
-
-        // 2. Перебор вопросов (с правильными именами)
         int qIndex = 0;
+
         while (true) {
-            String questionParam = "q" + qIndex + "_description";  // исправлено
+            String questionParam = "q" + qIndex + "_description";
             String questionText = req.getParameter(questionParam);
 
-            // Проверяем существование следующего вопроса
-            if (questionText == null) break;
-
-            // 3. Получаем тип вопроса
-            String typeParam = "q" + qIndex + "_type";
-            String questionTypeStr = req.getParameter(typeParam);
-            QuestionType type = QuestionType.valueOf(questionTypeStr); // Должен быть enum
-
-            List<String> answers = new ArrayList<>();
-            List<Integer> rightAnswerIndexes = new ArrayList<>();
-            int aIndex = 0;
-
-            while (true) {
-                String answerParam = "q" + qIndex + "_answer" + aIndex;
-                String answerText = req.getParameter(answerParam);
-                if (answerText == null) break;
-
-                answers.add(answerText);
-
-                // 4. Проверка чекбоксов (с правильной обработкой)
-                String correctParam = "q" + qIndex + "_correct" + aIndex;
-                String correctValue = req.getParameter(correctParam);
-
-                if (correctValue != null && correctValue.equals("on")) {
-                    rightAnswerIndexes.add(aIndex);
-                }
-                aIndex++;
+            if (questionText == null) {
+                break;
             }
 
-            TestQuestion question = TestQuestion.builder()
-                    .id(UUID.randomUUID())
-                    .description(questionText)
-                    .answers(answers)
-                    .rightAnswerIndexes(rightAnswerIndexes)
-                    .type(type)  // добавлен тип
-                    .build();
-
+            TestQuestion question = createUpdatedQuestion(req, qIndex);
             questions.add(question);
             qIndex++;
         }
 
-        // 5. Сохранение createdBy из оригинального теста
-        Test originalTest = testDao.findById(testId);
+        return questions;
+    }
 
-        Test test = Test.builder()
+    private TestQuestion createUpdatedQuestion(HttpServletRequest req, int questionIndex) {
+        String questionText = req.getParameter("q" + questionIndex + "_description");
+        QuestionType type = QuestionType.valueOf(req.getParameter("q" + questionIndex + "_type"));
+        List<String> answers = new ArrayList<>();
+        List<Integer> rightAnswerIndexes = new ArrayList<>();
+        int aIndex = 0;
+
+        while (true) {
+            String answerParam = "q" + questionIndex + "_answer" + aIndex;
+            String answerText = req.getParameter(answerParam);
+            if (answerText == null) break;
+
+            answers.add(answerText);
+
+            String correctParam = "q" + questionIndex + "_correct" + aIndex;
+            if (isAnswerCorrect(req, correctParam)) {
+                rightAnswerIndexes.add(aIndex);
+            }
+            aIndex++;
+        }
+
+        return TestQuestion.builder()
+                .id(UUID.randomUUID())
+                .description(questionText)
+                .answers(answers)
+                .rightAnswerIndexes(rightAnswerIndexes)
+                .type(type)
+                .build();
+    }
+
+    private boolean isAnswerCorrect(HttpServletRequest req, String correctParam) {
+        String correctValue = req.getParameter(correctParam);
+        return correctValue != null && correctValue.equals("on");
+    }
+
+    private Test buildUpdatedTest(UUID testId,
+                                  String name,
+                                  String topic,
+                                  int timeLimitMinutes,
+                                  List<TestQuestion> questions,
+                                  Test originalTest) {
+        return Test.builder()
                 .id(testId)
-                .createdBy(originalTest.getCreatedBy()) // важно сохранить создателя
+                .createdBy(originalTest.getCreatedBy())
                 .name(name)
                 .topic(topic)
                 .questions(questions)
+                .timeLimitMinutes(timeLimitMinutes)
                 .build();
-
-        testDao.update(test, testId);
     }
-
 }

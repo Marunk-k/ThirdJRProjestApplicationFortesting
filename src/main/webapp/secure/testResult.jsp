@@ -92,15 +92,6 @@
             margin: 0 10px;
         }
 
-        .btn-menu {
-            background: linear-gradient(135deg, #2196F3, #0d47a1);
-        }
-
-        .btn-menu:hover {
-            background: linear-gradient(135deg, #42a5f5, #1565c0);
-            transform: translateY(-3px);
-        }
-
         .btn-tests {
             background: linear-gradient(135deg, #4CAF50, #2e7d32);
         }

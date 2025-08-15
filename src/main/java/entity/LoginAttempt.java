@@ -18,7 +18,7 @@ public class LoginAttempt {
 
     public void incrementCountOfAttempts() {
         int attempts = countOfAttempts.incrementAndGet();
-        if (attempts >= 2) {
+        if (attempts >= 3) {
             blockedUntil = LocalDateTime.now().plusMinutes(5);
         }
     }

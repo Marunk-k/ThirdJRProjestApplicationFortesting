@@ -15,13 +15,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class HistoryService {
     private final HistoryDao historyDao;
+    private final TestService testService;
 
     public List<History> findByUserId(UUID id) {
         return historyDao.findByUserId(id);
     }
 
     public List<TestResult> extractBestResults(UUID id) {
-        List<History> history = historyDao.findByUserId(id);
+        List<History> history = findByUserId(id);
 
         return history.stream()
                 .map(History::getTestResult)
@@ -44,5 +45,23 @@ public class HistoryService {
                 .build();
 
         historyDao.save(history);
+    }
+
+    public void prepareResult(HttpServletRequest req) {
+        TestResult result = testService.extractResult(req);
+        saveResult(result, req);
+        req.getSession().setAttribute("testResult", result);
+    }
+
+    public void prepareHistory(HttpServletRequest req) {
+        UUID userId = ((User)req.getSession().getAttribute("user")).getId();
+        List<History> userHistory = findByUserId(userId);
+        req.setAttribute("userHistory", userHistory);
+    }
+
+    public void prepareBestResults(HttpServletRequest req) {
+        UUID userId = ((User)req.getSession().getAttribute("user")).getId();
+        List<TestResult> bestResults = extractBestResults(userId);
+        req.setAttribute("bestResults", bestResults);
     }
 }

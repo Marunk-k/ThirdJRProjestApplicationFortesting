@@ -26,9 +26,7 @@ public class HistoryServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        UUID userId = ((User)req.getSession().getAttribute("user")).getId();
-        List<History> userHistory = historyService.findByUserId(userId);
-        req.setAttribute("userHistory", userHistory);
+        historyService.prepareHistory(req);
         req.getRequestDispatcher("/secure/history.jsp").forward(req, resp);
     }
 }

@@ -11,7 +11,6 @@ import service.HistoryService;
 import service.TestService;
 
 import java.io.IOException;
-import java.util.UUID;
 
 @WebServlet(urlPatterns = "/secure/testPassing")
 public class TestPassingServlet extends HttpServlet {
@@ -27,8 +26,7 @@ public class TestPassingServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
-            UUID testId = UUID.fromString(req.getParameter("testId"));
-            testService.prepareTestById(req, testId);
+            testService.prepareTest(req);
             req.getRequestDispatcher("/secure/testPassing.jsp").forward(req, resp);
         } catch (Exception e) {
             resp.sendRedirect(req.getContextPath() + "/secure/tests");
@@ -37,9 +35,7 @@ public class TestPassingServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        TestResult result = testService.extractResult(req);
-        historyService.saveResult(result, req);
-        req.getSession().setAttribute("testResult", result);
+        historyService.prepareResult(req);
         resp.sendRedirect(req.getContextPath() + "/secure/testResult");
     }
 }

@@ -23,7 +23,7 @@ public class RoleFilter extends HttpFilter {
         Role role = user.getRole();
         HttpServletRequest request = (HttpServletRequest) req;
 
-        if ( role.equals(Role.ADMIN)) {
+        if (role.equals(Role.ADMIN)) {
             chain.doFilter(req, res);
         } else {
             req.getRequestDispatcher("/secure/userMain").forward(request, res);

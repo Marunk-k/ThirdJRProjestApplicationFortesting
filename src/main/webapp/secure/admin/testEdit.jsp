@@ -127,15 +127,6 @@
             transition: all 0.3s ease;
         }
 
-        .btn-back {
-            background: linear-gradient(135deg, #2196F3, #0d47a1);
-        }
-
-        .btn-back:hover {
-            background: linear-gradient(135deg, #42a5f5, #1565c0);
-            transform: translateY(-3px);
-        }
-
         .btn-submit {
             background: linear-gradient(135deg, #4CAF50, #2e7d32);
         }
@@ -204,7 +195,6 @@
         <input type="hidden" name="testId" value="${test.id}">
         <input type="hidden" name="_method" value="put">
         <input type="hidden" name="testId" value="${test.id}">
-        <!-- Поля для названия и темы теста -->
         <div class="question-block">
             <label class="question-text">Название теста:</label>
             <input type="text" class="text-input" name="testName" value="${test.name}" required>
@@ -213,14 +203,12 @@
             <input type="text" class="text-input" name="testTopic" value="${test.topic}" required>
         </div>
 
-        <!-- Блок редактирования вопросов -->
         <c:forEach var="q" items="${test.questions}" varStatus="status">
             <div class="question-block">
                 <label class="question-text">Вопрос ${status.index + 1}:</label>
                 <input type="text" class="text-input" name="q${status.index}_description"
                        value="${q.description}" placeholder="Текст вопроса" required>
 
-                <!-- Выбор типа вопроса -->
                 <div class="question-type">
                     <span class="type-label">Тип вопроса:</span>
                     <select class="type-select" name="q${status.index}_type">
@@ -258,7 +246,6 @@
 </div>
 
 <script>
-    // Функция для добавления нового варианта ответа
     function addAnswer(questionIndex) {
         const answersContainer = document.querySelector(`.question-block:nth-child(${questionIndex + 2}) .answers`);
         const answerCount = answersContainer.querySelectorAll('.answer-item').length;
@@ -274,11 +261,9 @@
                    placeholder="Вариант ответа" required>
         `;
 
-        // Вставляем перед кнопкой добавления
         answersContainer.insertBefore(newAnswer, answersContainer.lastChild);
     }
 
-    // Функция для подсветки выбранных ответов
     document.querySelectorAll('.answer-input[type="checkbox"]').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             const item = this.closest('.answer-item');
@@ -289,7 +274,6 @@
             }
         });
 
-        // Инициализация подсветки при загрузке
         if (checkbox.checked) {
             checkbox.closest('.answer-item').style.background = 'rgba(76, 175, 80, 0.2)';
         }

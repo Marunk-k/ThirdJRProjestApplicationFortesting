@@ -6,12 +6,11 @@
     <meta charset="UTF-8">
     <title>Главная страница</title>
     <style>
-        /* Сразу убираем белый фон */
         html, body {
             margin: 0;
             padding: 0;
             height: 100%;
-            background-color: #1d1f21; /* запасной фон на случай задержки CSS */
+            background-color: #1d1f21;
             font-family: 'Segoe UI', Tahoma, sans-serif;
             color: white;
         }

@@ -11,6 +11,7 @@ import org.mindrot.jbcrypt.BCrypt;
 import util.AuthResult;
 import util.CredentialsExtractor;
 import util.Role;
+import util.Status;
 
 import java.io.IOException;
 import java.util.Map;
@@ -31,7 +32,7 @@ public class AuthService {
         LoginAttempt loginAttempt = loginAttempts.get(credentials.getLogin());
 
         if (loginAttempt.isBlocked()) {
-            return new AuthResult(AuthResult.Status.BLOCKED);
+            return new AuthResult(Status.BLOCKED);
         }
 
         if (loginAttempt.isBlockedExpired()) {
@@ -42,15 +43,17 @@ public class AuthService {
 
         if (optionalUser.isPresent()) {
             loginAttempt.reset();
-            User user = optionalUser.get();
-            req.getSession().setAttribute("user", user);
-            return new AuthResult(AuthResult.Status.SUCCESS);
+            setUserInSession(optionalUser.get(), req);
+            return new AuthResult(Status.SUCCESS);
         } else {
             loginAttempt.incrementCountOfAttempts();
-            return new AuthResult(AuthResult.Status.FAILED);
+            return new AuthResult(Status.FAILED);
         }
     }
 
+    private void setUserInSession(User user, HttpServletRequest req) {
+        req.getSession().setAttribute("user", user);
+    }
 
     public boolean register(HttpServletRequest req) throws IOException {
         Credentials credentials = credentialsExtractor.extract(req);

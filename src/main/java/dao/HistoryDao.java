@@ -2,11 +2,7 @@ package dao;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import entity.History;
-import entity.Test;
-import entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 
@@ -26,7 +22,8 @@ public class HistoryDao {
         if (historyFile.length() == 0) {
             return new ArrayList<>();
         }
-        return objectMapper.readValue(historyFile, new TypeReference<List<History>>() {});
+        return objectMapper.readValue(historyFile, new TypeReference<>() {
+        });
     }
 
     public List<History> findByUserId(UUID userId) {

@@ -1,15 +1,11 @@
 package dao;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import entity.History;
 import entity.Test;
-import entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -30,8 +26,7 @@ public class TestDao {
         List<Test> tests = new ArrayList<>();
 
         try (Stream<Path> paths = Files.list(testsDirectory.toPath())) {
-            paths.filter(Files::isRegularFile)
-                    .filter(path -> path.getFileName().toString().startsWith("test_"))
+            paths.filter(path -> path.getFileName().toString().startsWith("test_"))
                     .filter(path -> path.toString().toLowerCase().endsWith(".json"))
                     .forEach(path -> {
                         try {
@@ -45,6 +40,12 @@ public class TestDao {
         return tests;
     }
 
+    @SneakyThrows
+    private void ensureDirectoryExists() {
+        if (!testsDirectory.exists()) {
+            Files.createDirectories(testsDirectory.toPath());
+        }
+    }
 
     public List<Test> findByTopic(String topic) {
         return findAll().stream()
@@ -60,21 +61,10 @@ public class TestDao {
     }
 
     @SneakyThrows
-    private void ensureDirectoryExists() {
-        if (!testsDirectory.exists()) {
-            Files.createDirectories(testsDirectory.toPath());
-        }
-    }
-
-    @SneakyThrows
     public void save(Test test) {
         ensureDirectoryExists();
         File testFile = getTestFile(test.getId());
         objectMapper.writeValue(testFile, test);
-    }
-
-    private File getTestFile(UUID testId) {
-        return new File(testsDirectory, "test_" + testId + ".json");
     }
 
     @SneakyThrows
@@ -91,9 +81,13 @@ public class TestDao {
     public void update(Test newTest, UUID testId) {
         ensureDirectoryExists();
 
-        if (findById(testId) != null) {
+        if (getTestFile(testId).exists()) {
             newTest.setId(testId);
             save(newTest);
         }
+    }
+
+    private File getTestFile(UUID testId) {
+        return new File(testsDirectory, "test_" + testId + ".json");
     }
 }

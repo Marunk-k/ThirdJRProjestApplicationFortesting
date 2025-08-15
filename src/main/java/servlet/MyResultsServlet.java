@@ -25,9 +25,7 @@ public class MyResultsServlet extends HttpServlet {
     }
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        UUID userId = ((User)req.getSession().getAttribute("user")).getId();
-        List<TestResult> bestResults = historyService.extractBestResults(userId);
-        req.setAttribute("bestResults", bestResults);
+        historyService.prepareBestResults(req);
         req.getRequestDispatcher("/secure/myResults.jsp").forward(req, resp);
     }
 }

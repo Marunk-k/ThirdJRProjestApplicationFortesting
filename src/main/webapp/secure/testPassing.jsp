@@ -1,8 +1,15 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="entity.Test" %>
-<%@ page import="entity.User" %>
+<%@ page import="java.time.LocalDateTime" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page isELIgnored="false" %>
+
+<%
+    Test test = (Test) request.getAttribute("test");
+    LocalDateTime endTime = LocalDateTime.now().plusMinutes(test.getTimeLimitMinutes());
+    String formattedEndTime = endTime.format(DateTimeFormatter.ofPattern("HH:mm"));
+%>
 
 <!DOCTYPE html>
 <html lang="ru">
@@ -10,7 +17,6 @@
     <meta charset="UTF-8">
     <title>Прохождение теста</title>
     <style>
-        /* Весь CSS остается без изменений */
         body {
             font-family: 'Segoe UI', Tahoma, sans-serif;
             background: linear-gradient(135deg, #1d1f21, #0f2027, #203a43, #2c5364);
@@ -123,15 +129,6 @@
             transition: all 0.3s ease;
         }
 
-        .btn-back {
-            background: linear-gradient(135deg, #2196F3, #0d47a1);
-        }
-
-        .btn-back:hover {
-            background: linear-gradient(135deg, #42a5f5, #1565c0);
-            transform: translateY(-3px);
-        }
-
         .btn-submit {
             background: linear-gradient(135deg, #4CAF50, #2e7d32);
         }
@@ -154,9 +151,48 @@
             margin-left: 4px;
         }
 
+        .timer-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .timer-label {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #bb86fc;
+        }
+
+        .timer-value {
+            font-size: 28px;
+            color: #4fc3f7;
+        }
+
+        .end-time {
+            font-size: 14px;
+            margin-top: 5px;
+            color: #81c784;
+        }
     </style>
 </head>
 <body>
+
+<div class="timer-container">
+    <div class="timer-label">Осталось времени:</div>
+    <div class="timer-value" id="timer">${test.timeLimitMinutes}:00</div>
+    <div class="end-time">Тест завершится в <span id="endTime"><%= formattedEndTime %></span></div>
+</div>
 
 <div class="container">
     <div class="test-header">
@@ -203,40 +239,116 @@
         </div>
     </form>
 </div>
-
 <script>
-    document.getElementById('testForm').addEventListener('submit', function(e) {
-        const allQuestions = document.querySelectorAll('.question-container');
-        let allAnswered = true;
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            const timeLimitMinutes = ${test.timeLimitMinutes};
+            let timeLeft = timeLimitMinutes * 60;
+            let timerInterval;
 
-        allQuestions.forEach(question => {
-            const inputs = question.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+            const timerElement = document.getElementById('timer');
+            const testForm = document.getElementById('testForm');
+            const submitBtn = document.getElementById('submitBtn');
 
-            const answered = Array.from(inputs).some(input => input.checked);
-
-            if (!answered) {
-                allAnswered = false;
-                question.style.border = "2px solid #ff5252";
-            } else {
-                question.style.border = "none";
+            if (!timerElement || !testForm) {
+                console.error('Critical elements not found!');
+                return;
             }
-        });
 
-        if (!allAnswered) {
-            e.preventDefault();
-            alert('Нужно ответить на все вопросы!');
+            function updateTimerDisplay() {
+                try {
+                    if (timeLeft <= 0) {
+                        timerElement.textContent = "00:00";
+                        timerElement.style.color = "#ff5252";
+                        return;
+                    }
+
+                    const minutes = Math.floor(timeLeft / 60);
+                    const seconds = timeLeft % 60;
+
+                    timerElement.textContent =
+                        (minutes < 10 ? '0' + minutes : minutes) + ':' +
+                        (seconds < 10 ? '0' + seconds : seconds);
+
+                    if (timeLeft <= 60) {
+                        timerElement.style.color = '#ff5252';
+                    } else if (timeLeft <= 180) {
+                        timerElement.style.color = '#ffcc80';
+                    } else {
+                        timerElement.style.color = '#4fc3f7';
+                    }
+                } catch (e) {
+                    console.error("Error updating timer display:", e);
+                }
+            }
+
+            function startTimer() {
+                try {
+                    updateTimerDisplay();
+
+                    timerInterval = setInterval(function() {
+                        timeLeft--;
+                        updateTimerDisplay();
+
+                        if (timeLeft <= 0) {
+                            clearInterval(timerInterval);
+                            timerElement.style.color = "#ff5252";
+                            timerElement.textContent = "00:00";
+
+                            alert("Время вышло! Тест будет автоматически отправлен");
+                            testForm.submit();
+                        }
+                    }, 1000);
+                } catch (e) {
+                    console.error("Timer error:", e);
+                }
+            }
+
+            startTimer();
+
+            testForm.addEventListener('submit', function(e) {
+                clearInterval(timerInterval);
+
+                const allQuestions = document.querySelectorAll('.question-container');
+                let allAnswered = true;
+
+                allQuestions.forEach(question => {
+                    const inputs = question.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+                    const answered = Array.from(inputs).some(input => input.checked);
+
+                    if (!answered) {
+                        allAnswered = false;
+                        question.style.border = "2px solid #ff5252";
+                    } else {
+                        question.style.border = "none";
+                    }
+                });
+
+                if (!allAnswered) {
+                    e.preventDefault();
+                    alert('Нужно ответить на все вопросы!');
+                    startTimer();
+                }
+            });
+
+            document.querySelectorAll('.answer-input').forEach(input => {
+                input.addEventListener('change', function() {
+                    const item = this.closest('.answer-item');
+                    if (this.checked) {
+                        item.style.background = 'rgba(76, 175, 80, 0.2)';
+                    } else {
+                        item.style.background = 'rgba(255, 255, 255, 0.05)';
+                    }
+                });
+
+                if (input.checked) {
+                    input.closest('.answer-item').style.background = 'rgba(76, 175, 80, 0.2)';
+                }
+            });
+
+        } catch (e) {
+            console.error("Global error in testPassing page:", e);
         }
-    });
-
-    document.querySelectorAll('.answer-input').forEach(input => {
-        input.addEventListener('change', function() {
-            const item = this.closest('.answer-item');
-            if (this.checked) {
-                item.style.background = 'rgba(76, 175, 80, 0.2)';
-            } else {
-                item.style.background = 'rgba(255, 255, 255, 0.05)';
-            }
-        });
     });
 </script>
 

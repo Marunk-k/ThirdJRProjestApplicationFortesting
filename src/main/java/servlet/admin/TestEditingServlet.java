@@ -10,7 +10,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import service.TestService;
 
 import java.io.IOException;
-import java.util.UUID;
 
 @WebServlet(urlPatterns = "/secure/admin/testEdit")
 public class TestEditingServlet extends HttpServlet {
@@ -23,9 +22,7 @@ public class TestEditingServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        UUID testId = UUID.fromString(req.getParameter("testId"));
-        testService.prepareTestById(req, testId);
-
+        testService.prepareTest(req);
         req.getRequestDispatcher("/secure/admin/testEdit.jsp").forward(req, resp);
     }
 

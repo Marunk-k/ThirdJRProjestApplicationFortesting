@@ -16,7 +16,6 @@ public class UserService {
 
     private final UserDao userDao;
 
-
     public void save(Credentials credentials) {
         User user = User.builder()
                 .id(UUID.randomUUID())
@@ -33,23 +32,25 @@ public class UserService {
     }
 
     public Optional<User> findUserByCredentials(Credentials credentials) {
-        Optional<User> userOpt = findAll().stream()
-                .filter(user -> user.getLogin().equals(credentials.getLogin()))
-                .findFirst();
+        Optional<User> userOpt = findUserByLogin(credentials.getLogin());
 
         if (userOpt.isPresent()) {
-            User userFromDb = userOpt.get();
-            String enteredPassword = credentials.getPassword();
-            String storedHash = userFromDb.getPassword();
-
-            if (BCrypt.checkpw(enteredPassword, storedHash)) {
+            if (isPasswordValid(credentials.getPassword(), userOpt.get())) {
                 return userOpt;
-            } else {
-                return Optional.empty();
             }
         }
-
         return Optional.empty();
+    }
+
+    private Optional<User> findUserByLogin(String login) {
+        return findAll().stream()
+                .filter(user -> user.getLogin().equals(login))
+                .findFirst();
+    }
+
+    private boolean isPasswordValid(String password, User userOpt) {
+        String storedHash = userOpt.getPassword();
+        return BCrypt.checkpw(password, storedHash);
     }
 
 

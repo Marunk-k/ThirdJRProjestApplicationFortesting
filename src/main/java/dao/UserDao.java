@@ -28,6 +28,7 @@ public class UserDao {
         if (userFile.length() == 0) {
             return new ArrayList<>();
         }
-        return objectMapper.readValue(userFile, new TypeReference<List<User>>() {});
+        return objectMapper.readValue(userFile, new TypeReference<>() {
+        });
     }
 }

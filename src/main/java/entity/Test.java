@@ -18,5 +18,5 @@ public class Test {
     private String name;
     private String topic;
     private List<TestQuestion> questions;
-
+    private int timeLimitMinutes;
 }

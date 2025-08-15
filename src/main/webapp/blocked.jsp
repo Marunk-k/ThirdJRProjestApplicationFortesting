@@ -2,7 +2,6 @@
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
-    // Получаем время разблокировки из запроса
     LocalDateTime unblockTime = (LocalDateTime) request.getAttribute("unblockTime");
     String formattedTime = unblockTime != null ?
             unblockTime.format(DateTimeFormatter.ofPattern("HH:mm")) : "через 5 минут";
@@ -40,11 +39,6 @@
             font-weight: bold;
             color: #ffcc80;
         }
-        .contact {
-            margin-top: 25px;
-            font-size: 14px;
-            color: #b0bec5;
-        }
     </style>
 </head>
 <body>
@@ -57,8 +51,6 @@
     </div>
 
     <p>Пожалуйста, попробуйте позже.</p>
-
-
 </div>
 </body>
 </html>

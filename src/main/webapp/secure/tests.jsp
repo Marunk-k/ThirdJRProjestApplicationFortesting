@@ -5,7 +5,7 @@
 <%@ page isELIgnored="false" %>
 <%
     User currentUser = (User) session.getAttribute("user");
-    String backUrl = request.getContextPath() + "/secure/userMain"; // по умолчанию
+    String backUrl = request.getContextPath() + "/secure/userMain";
     if (currentUser != null && "ADMIN".equalsIgnoreCase(currentUser.getRole().toString())) {
         backUrl = request.getContextPath() + "/secure/admin/adminMain";
     }

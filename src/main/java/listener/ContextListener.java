@@ -22,40 +22,46 @@ public class ContextListener implements ServletContextListener {
     public void contextInitialized(ServletContextEvent sce) {
         ServletContext context = sce.getServletContext();
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = createConfiguredMapper();
+
         File userFile = new File("C:\\Users\\User\\Desktop\\worrrk\\ThirdJRProject\\src\\main\\resources\\user.json");
+
         File testFile = new File("src/main/resources/tests");
+
         File historyFile = new File("C:\\Users\\User\\Desktop\\worrrk\\ThirdJRProject\\src\\main\\resources\\history.json");
-        context.setAttribute("mapper", mapper);
-        context.setAttribute("userFile", userFile);
-        context.setAttribute("testFile", userFile);
 
-        CredentialsExtractor credentialsExtractor = new CredentialsExtractor();
+        initServices(context, mapper, userFile, testFile, historyFile);
+    }
 
-//ПОМЕНЯТЬ!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    private ObjectMapper createConfiguredMapper() {
+        ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return mapper;
+    }
 
+    private void initServices(ServletContext context,
+                              ObjectMapper mapper,
+                              File userFile,
+                              File testDir,
+                              File historyFile) {
+
+        CredentialsExtractor credentialsExtractor = new CredentialsExtractor();
         UserDao userDao = new UserDao(mapper, userFile);
+        TestDao testDao = new TestDao(mapper, testDir);
+        HistoryDao historyDao = new HistoryDao(mapper, historyFile);
+
         UserService userService = new UserService(userDao);
         AuthService authService = new AuthService(credentialsExtractor, userService);
-
-        TestDao testDao = new TestDao(mapper, testFile);
-
         TestService testService = new TestService(testDao);
+        HistoryService historyService = new HistoryService(historyDao, testService);
+        ResultService resultService = new ResultService();
 
-        HistoryDao historyDao = new HistoryDao(mapper, historyFile);
-        HistoryService historyService = new HistoryService(historyDao);
-
-        context.setAttribute("userDao", userDao);
-        context.setAttribute("userService", userService);
         context.setAttribute("credentialsExtractor", credentialsExtractor);
+        context.setAttribute("userService", userService);
         context.setAttribute("authService", authService);
         context.setAttribute("testService", testService);
         context.setAttribute("historyService", historyService);
-
-
-
-
+        context.setAttribute("resultService", resultService);
     }
 }

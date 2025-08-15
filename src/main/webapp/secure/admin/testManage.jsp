@@ -4,7 +4,7 @@
 <%@ page isELIgnored="false" %>
 <%
     User currentUser = (User) session.getAttribute("user");
-    String backUrl = request.getContextPath() + "/secure/userMain"; // по умолчанию
+    String backUrl = request.getContextPath() + "/secure/userMain";
     if (currentUser != null && "ADMIN".equalsIgnoreCase(currentUser.getRole().toString())) {
         backUrl = request.getContextPath() + "/secure/admin/adminMain";
     }
@@ -69,9 +69,6 @@
         <form action="<%= request.getContextPath() %>/secure/admin/testCreating" method="get">
             <button class="btn-create" type="submit">Создать новый тест</button>
         </form>
-        <%--<form action="${pageContext.request.contextPath}/secure/admin/viewStats" method="get">
-            <button class="btn-stats" type="submit">Просмотр статистики</button>
-        </form>--%>
     </div>
 
     <table>
